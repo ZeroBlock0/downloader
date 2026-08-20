@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 
 from .config import AppConfig
+from .browser import browser
 from .core import DEFAULT_FILTER_PATTERN
 from .interactive import collect
 from .logger import RunLogger
@@ -135,6 +136,8 @@ def run_module(module_name: str, config: AppConfig, logger: RunLogger) -> bool:
         logger.event(f"模块异常: {module_name}\n{error}")
         print(f"\n[{module_name}] 任务异常，详细信息已写入日志。", flush=True)
         return False
+    finally:
+        browser.close()
 
 
 if __name__ == "__main__":

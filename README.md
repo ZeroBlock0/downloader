@@ -54,6 +54,10 @@ uv run -m downloader random \
 
 命令行模式要求模块所需参数完整传入，可通过 `uv run -m downloader --help` 查看参数列表。任务结束后会输出完成摘要；使用 `Ctrl+C` 停止持续运行的任务会输出停止提示。
 
+浏览器模块建议将 `--timeout` 设置为 15～30 秒。该参数同时用于 HTTP 请求和 Chrome 页面加载；设置为 1 秒时，页面稍慢就可能出现 Selenium 的 `TimeoutException`。`gallery` 和 `network` 共用进程内的全局 Chrome 浏览器服务，服务负责延迟启动、复用、性能日志配置和退出清理；`random` 模块不启动浏览器。
+
+项目使用 Selenium 自带的 Selenium Manager 管理 ChromeDriver，不再使用额外的 `webdriver-manager` 下载回退。若浏览器启动失败，先查看本次 `logs/` 日志中的“浏览器启动中”“浏览器启动完成”或“浏览器启动失败”记录；若启动完成后出现页面加载超时，应增大 `--timeout`，而不是更换 Firefox。
+
 画廊批量模式会在收集阶段逐轮输出扫描到的 `img`、`video`、新增数量、累计数量和页面高度；资源收集完成后才进入并发下载阶段。
 
 例如关闭日志和 MD5：
@@ -116,7 +120,7 @@ downloader/
 ├── modules.py    # gallery、network、random 三个模块
 ├── core.py       # 下载服务、存储、并发和 MD5 去重
 ├── logger.py     # 全局实时日志和终端镜像
-├── browser.py    # Selenium WebDriver 工厂
+├── browser.py    # 全局 Chrome 浏览器服务
 └── config.py     # 运行时配置对象
 ```
 

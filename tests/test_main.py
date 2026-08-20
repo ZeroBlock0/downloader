@@ -14,8 +14,10 @@ class MainTests(unittest.TestCase):
                 raise RuntimeError("boom")
 
         config = AppConfig(Path("."), 1, 1, False, "test-agent", False, RunLogger(False), {})
-        with patch("downloader.__main__.build_registry", return_value={"broken": BrokenModule()}):
+        with patch("downloader.__main__.build_registry", return_value={"broken": BrokenModule()}), \
+                patch("downloader.__main__.browser.close") as close:
             self.assertFalse(run_module("broken", config, config.logger))
+        close.assert_called_once_with()
 
 
 if __name__ == "__main__":
