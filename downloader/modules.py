@@ -11,7 +11,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from .browser import create_driver
+from .browser import browser
 from .config import AppConfig
 from .core import DownloadResult, DownloadService, build_download_service, download_many, safe_name
 
@@ -23,22 +23,19 @@ class GalleryModule:
         url = config.extra["url"]
         mode = int(config.extra["mode"])
         filter_pattern = re.compile(config.extra["filter_pattern"], re.I)
-        driver = create_driver(config)
-        try:
-            driver.get(url)
-            time.sleep(3)
-            folder = safe_name(driver.title, "gallery_download")
-            service = build_download_service(config, folder)
-            if mode == 0:
-                self._stream(driver, service, url, filter_pattern)
-            else:
-                urls = self._collect(driver, filter_pattern)
-                print(f"[gallery] 收集完成，共 {len(urls)} 个资源", flush=True)
-                stats = download_many(service, urls, config.max_workers)
-                print(f"[gallery] 统计: 成功={stats['saved']} 跳过={stats['skipped']} 失败={stats['failed']}", flush=True)
-            print("[gallery] 模块完成。", flush=True)
-        finally:
-            driver.quit()
+        driver = browser.get(config)
+        driver.get(url)
+        time.sleep(3)
+        folder = safe_name(driver.title, "gallery_download")
+        service = build_download_service(config, folder)
+        if mode == 0:
+            self._stream(driver, service, url, filter_pattern)
+        else:
+            urls = self._collect(driver, filter_pattern)
+            print(f"[gallery] 收集完成，共 {len(urls)} 个资源", flush=True)
+            stats = download_many(service, urls, config.max_workers)
+            print(f"[gallery] 统计: 成功={stats['saved']} 跳过={stats['skipped']} 失败={stats['failed']}", flush=True)
+        print("[gallery] 模块完成。", flush=True)
 
     def _collect(self, driver, pattern=None) -> set[str]:
         self._click_show_all(driver)
@@ -163,7 +160,7 @@ class NetworkModule:
         pattern = re.compile(config.extra["filter_pattern"], re.I)
         self._log(f"[network] 启动，目标: {url}")
         self._log(f"[network] 全局资源过滤规则: {pattern.pattern}")
-        driver = create_driver(config, performance_log=True)
+        driver = browser.get(config, performance_log=True)
         service = build_download_service(config)
         try:
             driver.get(url)
@@ -209,8 +206,7 @@ class NetworkModule:
             self._log(f"[network] 采集结束，共发现 {len(seen)} 个资源。")
             self._log(f"[network] 统计: 成功={stats['saved']} 跳过={stats['skipped']} 失败={stats['failed']}")
         finally:
-            driver.quit()
-            self._log("[network] 浏览器已关闭。")
+            self._log("[network] 浏览器任务结束。")
 
     @staticmethod
     def _log(message: str) -> None:
